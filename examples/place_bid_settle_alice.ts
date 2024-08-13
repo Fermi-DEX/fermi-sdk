@@ -4,7 +4,10 @@ import { BN } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { initClientWithKeypairPath } from "./utils";
 import { marketPda } from "./constants";
+import { Side } from "../src";
 
+
+// ensure opposite side (eg. limit ask by bob exists)
 const main = async () => {
   const client = initClientWithKeypairPath("./test-keypairs/bob/key.json");
 
@@ -23,19 +26,15 @@ const main = async () => {
     "./test-keypairs/alice/key.json"
   ).publicKey;
 
-  /**
-   *  For Ask side, maker ata should be for base token, taker ata for quote token.
-   *  For Bid side, maker ata should be for quote token, taker ata for base token.
-   */
-
-  const makerAtaPubKey = new PublicKey(
+  const makerQuoteAccount = new PublicKey(
     await checkOrCreateAssociatedTokenAccount(
       provider,
       market.quoteMint,
       makerpubkey
     )
   );
-  const takerAtaPubKey = new PublicKey(
+
+  const takerBaseAccount = new PublicKey(
     await checkOrCreateAssociatedTokenAccount(
       provider,
       market.baseMint,
@@ -43,8 +42,20 @@ const main = async () => {
     )
   );
 
-  const slotsToConsume = new BN(0);
-  const limit = new BN(2);
+  const makerBaseAccount = new PublicKey(
+    await checkOrCreateAssociatedTokenAccount(
+      provider,
+      market.baseMint,
+      makerpubkey
+    )
+  );
+  const takerQuoteAcconut = new PublicKey(
+    await checkOrCreateAssociatedTokenAccount(
+      provider,
+      market.quoteMint,
+      takerpubkey
+    )
+  );
 
   const makerOpenOrders = (
     await client.findOpenOrdersForMarket(makerpubkey, new PublicKey(marketPda))
@@ -54,31 +65,52 @@ const main = async () => {
   )[0];
 
   const args = {
-    marketPublicKey: new PublicKey(marketPda),
+    market: new PublicKey(marketPda),
     marketAuthority: market.marketAuthority,
-    eventHeapPublicKey: market.eventHeap,
-    makerAtaPublicKey: makerAtaPubKey,
-    takerAtaPublicKey: takerAtaPubKey,
-    marketVaultBasePublicKey: market.marketBaseVault,
-    marketVaultQuotePublicKey: market.marketQuoteVault,
+    eventHeap: market.eventHeap,
+    bids: market.bids,
+    asks: market.asks,
+    marketVaultQuote: market.marketQuoteVault,
+    marketVaultBase: market.marketBaseVault,
+    takerBaseAccount: takerBaseAccount,
+    takerQuoteAccount: takerQuoteAcconut,
+    makerBaseAccount: makerBaseAccount,
+    makerQuoteAccount: makerQuoteAccount,
     maker: makerOpenOrders,
     taker: takerOpenOrders,
-    slotsToConsume,
-    limit
+    limit: new BN(0),
+    orderid: new BN(0),
+    qty: new BN(2),
+    side: Side.Bid,
   };
   console.log(args);
 
-  const [ixs, signers] = await client.createFinalizeGivenEventsInstruction(
-    args.marketPublicKey,
+  //args 
+  // limit: BN;
+  // orderid: BN;
+  // qty: BN;
+  // side: Side;
+
+  
+  const ixs = await client.new_order_and_finalize(
+    args.market,
     args.marketAuthority,
-    args.eventHeapPublicKey,
-    args.makerAtaPublicKey,
-    args.takerAtaPublicKey,
-    args.marketVaultBasePublicKey,
-    args.marketVaultQuotePublicKey,
+    args.eventHeap,
+    args.bids,
+    args.asks,
+    args.takerBaseAccount,
+    args.takerQuoteAccount,
+    args.makerBaseAccount,
+    args.makerQuoteAccount,
+    args.marketVaultQuote,
+    args.marketVaultBase,
     args.maker,
     args.taker,
-    args.slotsToConsume
+    //new BN(2),  no slots arg
+    args.limit,
+    args.orderid,
+    args.qty,
+    args.side
   );
 
   await client.sendAndConfirmTransaction(ixs, {});

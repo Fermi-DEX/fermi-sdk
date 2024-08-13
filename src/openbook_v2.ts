@@ -637,6 +637,115 @@ export interface OpenbookV2 {
       };
     },
     {
+      name: "placeAndFinalize";
+      accounts: [
+        {
+          name: "signer";
+          isMut: false;
+          isSigner: true;
+        },
+        {
+          name: "market";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "marketAuthority";
+          isMut: true;
+          isSigner: false;
+          docs: ["CHECK : not usafe."];
+        },
+        {
+          name: "eventHeap";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "bids";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "asks";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "takerBaseAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "takerQuoteAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "makerBaseAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "makerQuoteAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "marketVaultQuote";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "marketVaultBase";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "maker";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "taker";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "limit";
+          type: "u64";
+        },
+        {
+          name: "orderid";
+          type: "u128";
+        },
+        {
+          name: "qty";
+          type: "u64";
+        },
+        {
+          name: "side";
+          type: {
+            defined: "Side";
+          };
+        }
+      ];
+      returns: {
+        option: "u128";
+      };
+    },
+    {
       name: "cancelAndPlaceOrders";
       docs: ["Cancel orders and place multiple orders."];
       accounts: [
@@ -931,6 +1040,38 @@ export interface OpenbookV2 {
     },
     {
       name: "cancelWithPenalty";
+      docs: [
+        "Process up to `limit` [events](crate::state::AnyEvent).",
+        "",
+        "When a user places a 'take' order, they do not know beforehand which",
+        "market maker will have placed the 'make' order that they get executed",
+        "against. This prevents them from passing in a market maker's",
+        "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is needed",
+        "to credit/debit the relevant tokens to/from the maker. As such, Openbook",
+        "uses a 'crank' system, where `place_order` only emits events, and",
+        "`consume_events` handles token settlement.",
+        "",
+        "Currently, there are two types of events: [`FillEvent`](crate::state::FillEvent)s",
+        "and [`OutEvent`](crate::state::OutEvent)s.",
+        "",
+        "A `FillEvent` is emitted when an order is filled, and it is handled by",
+        "debiting whatever the taker is selling from the taker and crediting",
+        "it to the maker, and debiting whatever the taker is buying from the",
+        "maker and crediting it to the taker. Note that *no tokens are moved*,",
+        "these are just debits and credits to each party's [`Position`](crate::state::Position).",
+        "",
+        "An `OutEvent` is emitted when a limit order needs to be removed from",
+        "the book during a `place_order` invocation, and it is handled by",
+        "crediting whatever the maker would have sold (quote token in a bid,",
+        "base token in an ask) back to the maker.",
+        "",
+        "The `consume_events` instruction is called by the taker, and it handles",
+        "the actual token settlement. It is passed in the taker's own",
+        "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+        "to debit/credit tokens to/from the taker, and the maker's",
+        "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+        "to debit/credit tokens to/from the maker."
+      ];
       accounts: [
         {
           name: "market";
@@ -1064,6 +1205,12 @@ export interface OpenbookV2 {
       ];
       args: [
         {
+          name: "slots";
+          type: {
+            option: "u64";
+          };
+        },
+        {
           name: "limit";
           type: "u64";
         }
@@ -1140,6 +1287,95 @@ export interface OpenbookV2 {
         }
       ];
       args: [
+        {
+          name: "slots";
+          type: {
+            option: "u64";
+          };
+        },
+        {
+          name: "limit";
+          type: "u64";
+        }
+      ];
+    },
+    {
+      name: "atomicFinalizeMarket";
+      accounts: [
+        {
+          name: "market";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "marketAuthority";
+          isMut: true;
+          isSigner: false;
+          docs: ["CHECK : not usafe."];
+        },
+        {
+          name: "eventHeap";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "takerBaseAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "takerQuoteAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "makerBaseAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "makerQuoteAccount";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "marketVaultQuote";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "marketVaultBase";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "maker";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "taker";
+          isMut: true;
+          isSigner: false;
+        },
+        {
+          name: "tokenProgram";
+          isMut: false;
+          isSigner: false;
+        },
+        {
+          name: "systemProgram";
+          isMut: false;
+          isSigner: false;
+        }
+      ];
+      args: [
+        {
+          name: "slots";
+          type: {
+            option: "u64";
+          };
+        },
         {
           name: "limit";
           type: "u64";
@@ -2177,11 +2413,11 @@ export interface OpenbookV2 {
             };
           },
           {
-            name: "total_approved_base";
+            name: "totalApprovedBase";
             type: "u64";
           },
           {
-            name: "total_approved_quote";
+            name: "totalApprovedQuote";
             type: "u64";
           },
           {
@@ -2573,6 +2809,82 @@ export interface OpenbookV2 {
     },
     {
       name: "FillEvent";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "eventType";
+            type: "u8";
+          },
+          {
+            name: "takerSide";
+            type: "u8";
+          },
+          {
+            name: "makerOut";
+            type: "u8";
+          },
+          {
+            name: "makerSlot";
+            type: "u8";
+          },
+          {
+            name: "padding";
+            type: {
+              array: ["u8", 4];
+            };
+          },
+          {
+            name: "timestamp";
+            type: "u64";
+          },
+          {
+            name: "seqNum";
+            type: "u64";
+          },
+          {
+            name: "maker";
+            type: "publicKey";
+          },
+          {
+            name: "makerTimestamp";
+            type: "u64";
+          },
+          {
+            name: "taker";
+            type: "publicKey";
+          },
+          {
+            name: "takerClientOrderId";
+            type: "u64";
+          },
+          {
+            name: "price";
+            type: "i64";
+          },
+          {
+            name: "pegLimit";
+            type: "i64";
+          },
+          {
+            name: "quantity";
+            type: "i64";
+          },
+          {
+            name: "makerClientOrderId";
+            type: "u64";
+          },
+          {
+            name: "reserved";
+            type: {
+              array: ["u8", 8];
+            };
+          }
+        ];
+      };
+    },
+    {
+      name: "FillEventDirect";
       type: {
         kind: "struct";
         fields: [
@@ -3074,6 +3386,9 @@ export interface OpenbookV2 {
         kind: "enum";
         variants: [
           {
+            name: "InsufficientFunds";
+          },
+          {
             name: "SomeError";
           },
           {
@@ -3204,6 +3519,9 @@ export interface OpenbookV2 {
           },
           {
             name: "NonEmptyOpenOrdersPosition";
+          },
+          {
+            name: "MissingMargin";
           }
         ];
       };
@@ -3272,6 +3590,9 @@ export interface OpenbookV2 {
           },
           {
             name: "Out";
+          },
+          {
+            name: "FillDirect";
           }
         ];
       };
@@ -3788,6 +4109,26 @@ export interface OpenbookV2 {
       code: 6000;
       name: "SomeError";
       msg: "";
+    },
+    {
+      code: 6001;
+      name: "FinalizeNotExpired";
+      msg: "Not expired";
+    },
+    {
+      code: 6002;
+      name: "FinalizeFundsAvailable";
+      msg: "Funds available";
+    },
+    {
+      code: 6003;
+      name: "OpenOrdersError";
+      msg: "Invalid openorders";
+    },
+    {
+      code: 6004;
+      name: "InsufficientFunds";
+      msg: "Insufficient Funds";
     }
   ];
   default: {
@@ -4419,6 +4760,115 @@ export interface OpenbookV2 {
         };
       },
       {
+        name: "placeAndFinalize";
+        accounts: [
+          {
+            name: "signer";
+            isMut: false;
+            isSigner: true;
+          },
+          {
+            name: "market";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "marketAuthority";
+            isMut: true;
+            isSigner: false;
+            docs: ["CHECK : not usafe."];
+          },
+          {
+            name: "eventHeap";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "bids";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "asks";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "takerBaseAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "takerQuoteAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "makerBaseAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "makerQuoteAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "marketVaultQuote";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "marketVaultBase";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "maker";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "taker";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "tokenProgram";
+            isMut: false;
+            isSigner: false;
+          },
+          {
+            name: "systemProgram";
+            isMut: false;
+            isSigner: false;
+          }
+        ];
+        args: [
+          {
+            name: "limit";
+            type: "u64";
+          },
+          {
+            name: "orderid";
+            type: "u128";
+          },
+          {
+            name: "qty";
+            type: "u64";
+          },
+          {
+            name: "side";
+            type: {
+              defined: "Side";
+            };
+          }
+        ];
+        returns: {
+          option: "u128";
+        };
+      },
+      {
         name: "cancelAndPlaceOrders";
         docs: ["Cancel orders and place multiple orders."];
         accounts: [
@@ -4713,7 +5163,38 @@ export interface OpenbookV2 {
       },
       {
         name: "cancelWithPenalty";
-
+        docs: [
+          "Process up to `limit` [events](crate::state::AnyEvent).",
+          "",
+          "When a user places a 'take' order, they do not know beforehand which",
+          "market maker will have placed the 'make' order that they get executed",
+          "against. This prevents them from passing in a market maker's",
+          "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is needed",
+          "to credit/debit the relevant tokens to/from the maker. As such, Openbook",
+          "uses a 'crank' system, where `place_order` only emits events, and",
+          "`consume_events` handles token settlement.",
+          "",
+          "Currently, there are two types of events: [`FillEvent`](crate::state::FillEvent)s",
+          "and [`OutEvent`](crate::state::OutEvent)s.",
+          "",
+          "A `FillEvent` is emitted when an order is filled, and it is handled by",
+          "debiting whatever the taker is selling from the taker and crediting",
+          "it to the maker, and debiting whatever the taker is buying from the",
+          "maker and crediting it to the taker. Note that *no tokens are moved*,",
+          "these are just debits and credits to each party's [`Position`](crate::state::Position).",
+          "",
+          "An `OutEvent` is emitted when a limit order needs to be removed from",
+          "the book during a `place_order` invocation, and it is handled by",
+          "crediting whatever the maker would have sold (quote token in a bid,",
+          "base token in an ask) back to the maker.",
+          "",
+          "The `consume_events` instruction is called by the taker, and it handles",
+          "the actual token settlement. It is passed in the taker's own",
+          "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+          "to debit/credit tokens to/from the taker, and the maker's",
+          "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+          "to debit/credit tokens to/from the maker."
+        ];
         accounts: [
           {
             name: "market";
@@ -4847,6 +5328,12 @@ export interface OpenbookV2 {
         ];
         args: [
           {
+            name: "slots";
+            type: {
+              option: "u64";
+            };
+          },
+          {
             name: "limit";
             type: "u64";
           }
@@ -4923,6 +5410,95 @@ export interface OpenbookV2 {
           }
         ];
         args: [
+          {
+            name: "slots";
+            type: {
+              option: "u64";
+            };
+          },
+          {
+            name: "limit";
+            type: "u64";
+          }
+        ];
+      },
+      {
+        name: "atomicFinalizeMarket";
+        accounts: [
+          {
+            name: "market";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "marketAuthority";
+            isMut: true;
+            isSigner: false;
+            docs: ["CHECK : not usafe."];
+          },
+          {
+            name: "eventHeap";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "takerBaseAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "takerQuoteAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "makerBaseAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "makerQuoteAccount";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "marketVaultQuote";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "marketVaultBase";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "maker";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "taker";
+            isMut: true;
+            isSigner: false;
+          },
+          {
+            name: "tokenProgram";
+            isMut: false;
+            isSigner: false;
+          },
+          {
+            name: "systemProgram";
+            isMut: false;
+            isSigner: false;
+          }
+        ];
+        args: [
+          {
+            name: "slots";
+            type: {
+              option: "u64";
+            };
+          },
           {
             name: "limit";
             type: "u64";
@@ -5876,11 +6452,11 @@ export interface OpenbookV2 {
               };
             },
             {
-              name: "total_approved_base";
+              name: "totalApprovedBase";
               type: "u64";
             },
             {
-              name: "total_approved_quote";
+              name: "totalApprovedQuote";
               type: "u64";
             },
             {
@@ -5888,7 +6464,7 @@ export interface OpenbookV2 {
               type: {
                 array: [
                   {
-                    defined: "openOrder";
+                    defined: "OpenOrder";
                   },
                   24
                 ];
@@ -6272,6 +6848,82 @@ export interface OpenbookV2 {
       },
       {
         name: "FillEvent";
+        type: {
+          kind: "struct";
+          fields: [
+            {
+              name: "eventType";
+              type: "u8";
+            },
+            {
+              name: "takerSide";
+              type: "u8";
+            },
+            {
+              name: "makerOut";
+              type: "u8";
+            },
+            {
+              name: "makerSlot";
+              type: "u8";
+            },
+            {
+              name: "padding";
+              type: {
+                array: ["u8", 4];
+              };
+            },
+            {
+              name: "timestamp";
+              type: "u64";
+            },
+            {
+              name: "seqNum";
+              type: "u64";
+            },
+            {
+              name: "maker";
+              type: "publicKey";
+            },
+            {
+              name: "makerTimestamp";
+              type: "u64";
+            },
+            {
+              name: "taker";
+              type: "publicKey";
+            },
+            {
+              name: "takerClientOrderId";
+              type: "u64";
+            },
+            {
+              name: "price";
+              type: "i64";
+            },
+            {
+              name: "pegLimit";
+              type: "i64";
+            },
+            {
+              name: "quantity";
+              type: "i64";
+            },
+            {
+              name: "makerClientOrderId";
+              type: "u64";
+            },
+            {
+              name: "reserved";
+              type: {
+                array: ["u8", 8];
+              };
+            }
+          ];
+        };
+      },
+      {
+        name: "FillEventDirect";
         type: {
           kind: "struct";
           fields: [
@@ -6773,6 +7425,9 @@ export interface OpenbookV2 {
           kind: "enum";
           variants: [
             {
+              name: "InsufficientFunds";
+            },
+            {
               name: "SomeError";
             },
             {
@@ -6903,6 +7558,9 @@ export interface OpenbookV2 {
             },
             {
               name: "NonEmptyOpenOrdersPosition";
+            },
+            {
+              name: "MissingMargin";
             }
           ];
         };
@@ -6971,6 +7629,9 @@ export interface OpenbookV2 {
             },
             {
               name: "Out";
+            },
+            {
+              name: "FillDirect";
             }
           ];
         };
@@ -7487,6 +8148,26 @@ export interface OpenbookV2 {
         code: 6000;
         name: "SomeError";
         msg: "";
+      },
+      {
+        code: 6001;
+        name: "FinalizeNotExpired";
+        msg: "Not expired";
+      },
+      {
+        code: 6002;
+        name: "FinalizeFundsAvailable";
+        msg: "Funds available";
+      },
+      {
+        code: 6003;
+        name: "OpenOrdersError";
+        msg: "Invalid openorders";
+      },
+      {
+        code: 6004;
+        name: "InsufficientFunds";
+        msg: "Insufficient Funds";
       }
     ];
   };
@@ -8130,6 +8811,115 @@ export const IDL: OpenbookV2 = {
       },
     },
     {
+      name: "placeAndFinalize",
+      accounts: [
+        {
+          name: "signer",
+          isMut: false,
+          isSigner: true,
+        },
+        {
+          name: "market",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "marketAuthority",
+          isMut: true,
+          isSigner: false,
+          docs: ["CHECK : not usafe."],
+        },
+        {
+          name: "eventHeap",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "bids",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "asks",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "takerBaseAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "takerQuoteAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "makerBaseAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "makerQuoteAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "marketVaultQuote",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "marketVaultBase",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "maker",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "taker",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "limit",
+          type: "u64",
+        },
+        {
+          name: "orderid",
+          type: "u128",
+        },
+        {
+          name: "qty",
+          type: "u64",
+        },
+        {
+          name: "side",
+          type: {
+            defined: "Side",
+          },
+        },
+      ],
+      returns: {
+        option: "u128",
+      },
+    },
+    {
       name: "cancelAndPlaceOrders",
       docs: ["Cancel orders and place multiple orders."],
       accounts: [
@@ -8424,7 +9214,38 @@ export const IDL: OpenbookV2 = {
     },
     {
       name: "cancelWithPenalty",
-
+      docs: [
+        "Process up to `limit` [events](crate::state::AnyEvent).",
+        "",
+        "When a user places a 'take' order, they do not know beforehand which",
+        "market maker will have placed the 'make' order that they get executed",
+        "against. This prevents them from passing in a market maker's",
+        "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is needed",
+        "to credit/debit the relevant tokens to/from the maker. As such, Openbook",
+        "uses a 'crank' system, where `place_order` only emits events, and",
+        "`consume_events` handles token settlement.",
+        "",
+        "Currently, there are two types of events: [`FillEvent`](crate::state::FillEvent)s",
+        "and [`OutEvent`](crate::state::OutEvent)s.",
+        "",
+        "A `FillEvent` is emitted when an order is filled, and it is handled by",
+        "debiting whatever the taker is selling from the taker and crediting",
+        "it to the maker, and debiting whatever the taker is buying from the",
+        "maker and crediting it to the taker. Note that *no tokens are moved*,",
+        "these are just debits and credits to each party's [`Position`](crate::state::Position).",
+        "",
+        "An `OutEvent` is emitted when a limit order needs to be removed from",
+        "the book during a `place_order` invocation, and it is handled by",
+        "crediting whatever the maker would have sold (quote token in a bid,",
+        "base token in an ask) back to the maker.",
+        "",
+        "The `consume_events` instruction is called by the taker, and it handles",
+        "the actual token settlement. It is passed in the taker's own",
+        "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+        "to debit/credit tokens to/from the taker, and the maker's",
+        "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+        "to debit/credit tokens to/from the maker.",
+      ],
       accounts: [
         {
           name: "market",
@@ -8558,6 +9379,12 @@ export const IDL: OpenbookV2 = {
       ],
       args: [
         {
+          name: "slots",
+          type: {
+            option: "u64",
+          },
+        },
+        {
           name: "limit",
           type: "u64",
         },
@@ -8634,6 +9461,95 @@ export const IDL: OpenbookV2 = {
         },
       ],
       args: [
+        {
+          name: "slots",
+          type: {
+            option: "u64",
+          },
+        },
+        {
+          name: "limit",
+          type: "u64",
+        },
+      ],
+    },
+    {
+      name: "atomicFinalizeMarket",
+      accounts: [
+        {
+          name: "market",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "marketAuthority",
+          isMut: true,
+          isSigner: false,
+          docs: ["CHECK : not usafe."],
+        },
+        {
+          name: "eventHeap",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "takerBaseAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "takerQuoteAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "makerBaseAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "makerQuoteAccount",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "marketVaultQuote",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "marketVaultBase",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "maker",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "taker",
+          isMut: true,
+          isSigner: false,
+        },
+        {
+          name: "tokenProgram",
+          isMut: false,
+          isSigner: false,
+        },
+        {
+          name: "systemProgram",
+          isMut: false,
+          isSigner: false,
+        },
+      ],
+      args: [
+        {
+          name: "slots",
+          type: {
+            option: "u64",
+          },
+        },
         {
           name: "limit",
           type: "u64",
@@ -9671,11 +10587,11 @@ export const IDL: OpenbookV2 = {
             },
           },
           {
-            name: "total_approved_base",
+            name: "totalApprovedBase",
             type: "u64",
           },
           {
-            name: "total_approved_quote",
+            name: "totalApprovedQuote",
             type: "u64",
           },
           {
@@ -10067,6 +10983,82 @@ export const IDL: OpenbookV2 = {
     },
     {
       name: "FillEvent",
+      type: {
+        kind: "struct",
+        fields: [
+          {
+            name: "eventType",
+            type: "u8",
+          },
+          {
+            name: "takerSide",
+            type: "u8",
+          },
+          {
+            name: "makerOut",
+            type: "u8",
+          },
+          {
+            name: "makerSlot",
+            type: "u8",
+          },
+          {
+            name: "padding",
+            type: {
+              array: ["u8", 4],
+            },
+          },
+          {
+            name: "timestamp",
+            type: "u64",
+          },
+          {
+            name: "seqNum",
+            type: "u64",
+          },
+          {
+            name: "maker",
+            type: "publicKey",
+          },
+          {
+            name: "makerTimestamp",
+            type: "u64",
+          },
+          {
+            name: "taker",
+            type: "publicKey",
+          },
+          {
+            name: "takerClientOrderId",
+            type: "u64",
+          },
+          {
+            name: "price",
+            type: "i64",
+          },
+          {
+            name: "pegLimit",
+            type: "i64",
+          },
+          {
+            name: "quantity",
+            type: "i64",
+          },
+          {
+            name: "makerClientOrderId",
+            type: "u64",
+          },
+          {
+            name: "reserved",
+            type: {
+              array: ["u8", 8],
+            },
+          },
+        ],
+      },
+    },
+    {
+      name: "FillEventDirect",
       type: {
         kind: "struct",
         fields: [
@@ -10568,6 +11560,9 @@ export const IDL: OpenbookV2 = {
         kind: "enum",
         variants: [
           {
+            name: "InsufficientFunds",
+          },
+          {
             name: "SomeError",
           },
           {
@@ -10699,6 +11694,9 @@ export const IDL: OpenbookV2 = {
           {
             name: "NonEmptyOpenOrdersPosition",
           },
+          {
+            name: "MissingMargin",
+          },
         ],
       },
     },
@@ -10766,6 +11764,9 @@ export const IDL: OpenbookV2 = {
           },
           {
             name: "Out",
+          },
+          {
+            name: "FillDirect",
           },
         ],
       },
@@ -11282,6 +12283,26 @@ export const IDL: OpenbookV2 = {
       code: 6000,
       name: "SomeError",
       msg: "",
+    },
+    {
+      code: 6001,
+      name: "FinalizeNotExpired",
+      msg: "Not expired",
+    },
+    {
+      code: 6002,
+      name: "FinalizeFundsAvailable",
+      msg: "Funds available",
+    },
+    {
+      code: 6003,
+      name: "OpenOrdersError",
+      msg: "Invalid openorders",
+    },
+    {
+      code: 6004,
+      name: "InsufficientFunds",
+      msg: "Insufficient Funds",
     },
   ],
   default: {
@@ -11913,6 +12934,115 @@ export const IDL: OpenbookV2 = {
         },
       },
       {
+        name: "placeAndFinalize",
+        accounts: [
+          {
+            name: "signer",
+            isMut: false,
+            isSigner: true,
+          },
+          {
+            name: "market",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "marketAuthority",
+            isMut: true,
+            isSigner: false,
+            docs: ["CHECK : not usafe."],
+          },
+          {
+            name: "eventHeap",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "bids",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "asks",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "takerBaseAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "takerQuoteAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "makerBaseAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "makerQuoteAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "marketVaultQuote",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "marketVaultBase",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "maker",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "taker",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "tokenProgram",
+            isMut: false,
+            isSigner: false,
+          },
+          {
+            name: "systemProgram",
+            isMut: false,
+            isSigner: false,
+          },
+        ],
+        args: [
+          {
+            name: "limit",
+            type: "u64",
+          },
+          {
+            name: "orderid",
+            type: "u128",
+          },
+          {
+            name: "qty",
+            type: "u64",
+          },
+          {
+            name: "side",
+            type: {
+              defined: "Side",
+            },
+          },
+        ],
+        returns: {
+          option: "u128",
+        },
+      },
+      {
         name: "cancelAndPlaceOrders",
         docs: ["Cancel orders and place multiple orders."],
         accounts: [
@@ -12207,6 +13337,38 @@ export const IDL: OpenbookV2 = {
       },
       {
         name: "cancelWithPenalty",
+        docs: [
+          "Process up to `limit` [events](crate::state::AnyEvent).",
+          "",
+          "When a user places a 'take' order, they do not know beforehand which",
+          "market maker will have placed the 'make' order that they get executed",
+          "against. This prevents them from passing in a market maker's",
+          "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is needed",
+          "to credit/debit the relevant tokens to/from the maker. As such, Openbook",
+          "uses a 'crank' system, where `place_order` only emits events, and",
+          "`consume_events` handles token settlement.",
+          "",
+          "Currently, there are two types of events: [`FillEvent`](crate::state::FillEvent)s",
+          "and [`OutEvent`](crate::state::OutEvent)s.",
+          "",
+          "A `FillEvent` is emitted when an order is filled, and it is handled by",
+          "debiting whatever the taker is selling from the taker and crediting",
+          "it to the maker, and debiting whatever the taker is buying from the",
+          "maker and crediting it to the taker. Note that *no tokens are moved*,",
+          "these are just debits and credits to each party's [`Position`](crate::state::Position).",
+          "",
+          "An `OutEvent` is emitted when a limit order needs to be removed from",
+          "the book during a `place_order` invocation, and it is handled by",
+          "crediting whatever the maker would have sold (quote token in a bid,",
+          "base token in an ask) back to the maker.",
+          "",
+          "The `consume_events` instruction is called by the taker, and it handles",
+          "the actual token settlement. It is passed in the taker's own",
+          "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+          "to debit/credit tokens to/from the taker, and the maker's",
+          "[`OpenOrdersAccount`](crate::state::OpenOrdersAccount), which is used",
+          "to debit/credit tokens to/from the maker.",
+        ],
         accounts: [
           {
             name: "market",
@@ -12340,6 +13502,12 @@ export const IDL: OpenbookV2 = {
         ],
         args: [
           {
+            name: "slots",
+            type: {
+              option: "u64",
+            },
+          },
+          {
             name: "limit",
             type: "u64",
           },
@@ -12416,6 +13584,95 @@ export const IDL: OpenbookV2 = {
           },
         ],
         args: [
+          {
+            name: "slots",
+            type: {
+              option: "u64",
+            },
+          },
+          {
+            name: "limit",
+            type: "u64",
+          },
+        ],
+      },
+      {
+        name: "atomicFinalizeMarket",
+        accounts: [
+          {
+            name: "market",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "marketAuthority",
+            isMut: true,
+            isSigner: false,
+            docs: ["CHECK : not usafe."],
+          },
+          {
+            name: "eventHeap",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "takerBaseAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "takerQuoteAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "makerBaseAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "makerQuoteAccount",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "marketVaultQuote",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "marketVaultBase",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "maker",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "taker",
+            isMut: true,
+            isSigner: false,
+          },
+          {
+            name: "tokenProgram",
+            isMut: false,
+            isSigner: false,
+          },
+          {
+            name: "systemProgram",
+            isMut: false,
+            isSigner: false,
+          },
+        ],
+        args: [
+          {
+            name: "slots",
+            type: {
+              option: "u64",
+            },
+          },
           {
             name: "limit",
             type: "u64",
@@ -13369,11 +14626,11 @@ export const IDL: OpenbookV2 = {
               },
             },
             {
-              name: "total_approved_base",
+              name: "totalApprovedBase",
               type: "u64",
             },
             {
-              name: "total_approved_quote",
+              name: "totalApprovedQuote",
               type: "u64",
             },
             {
@@ -13381,7 +14638,7 @@ export const IDL: OpenbookV2 = {
               type: {
                 array: [
                   {
-                    defined: "openOrder",
+                    defined: "OpenOrder",
                   },
                   24,
                 ],
@@ -13765,6 +15022,82 @@ export const IDL: OpenbookV2 = {
       },
       {
         name: "FillEvent",
+        type: {
+          kind: "struct",
+          fields: [
+            {
+              name: "eventType",
+              type: "u8",
+            },
+            {
+              name: "takerSide",
+              type: "u8",
+            },
+            {
+              name: "makerOut",
+              type: "u8",
+            },
+            {
+              name: "makerSlot",
+              type: "u8",
+            },
+            {
+              name: "padding",
+              type: {
+                array: ["u8", 4],
+              },
+            },
+            {
+              name: "timestamp",
+              type: "u64",
+            },
+            {
+              name: "seqNum",
+              type: "u64",
+            },
+            {
+              name: "maker",
+              type: "publicKey",
+            },
+            {
+              name: "makerTimestamp",
+              type: "u64",
+            },
+            {
+              name: "taker",
+              type: "publicKey",
+            },
+            {
+              name: "takerClientOrderId",
+              type: "u64",
+            },
+            {
+              name: "price",
+              type: "i64",
+            },
+            {
+              name: "pegLimit",
+              type: "i64",
+            },
+            {
+              name: "quantity",
+              type: "i64",
+            },
+            {
+              name: "makerClientOrderId",
+              type: "u64",
+            },
+            {
+              name: "reserved",
+              type: {
+                array: ["u8", 8],
+              },
+            },
+          ],
+        },
+      },
+      {
+        name: "FillEventDirect",
         type: {
           kind: "struct",
           fields: [
@@ -14266,6 +15599,9 @@ export const IDL: OpenbookV2 = {
           kind: "enum",
           variants: [
             {
+              name: "InsufficientFunds",
+            },
+            {
               name: "SomeError",
             },
             {
@@ -14397,6 +15733,9 @@ export const IDL: OpenbookV2 = {
             {
               name: "NonEmptyOpenOrdersPosition",
             },
+            {
+              name: "MissingMargin",
+            },
           ],
         },
       },
@@ -14464,6 +15803,9 @@ export const IDL: OpenbookV2 = {
             },
             {
               name: "Out",
+            },
+            {
+              name: "FillDirect",
             },
           ],
         },
@@ -14980,6 +16322,26 @@ export const IDL: OpenbookV2 = {
         code: 6000,
         name: "SomeError",
         msg: "",
+      },
+      {
+        code: 6001,
+        name: "FinalizeNotExpired",
+        msg: "Not expired",
+      },
+      {
+        code: 6002,
+        name: "FinalizeFundsAvailable",
+        msg: "Funds available",
+      },
+      {
+        code: 6003,
+        name: "OpenOrdersError",
+        msg: "Invalid openorders",
+      },
+      {
+        code: 6004,
+        name: "InsufficientFunds",
+        msg: "Insufficient Funds",
       },
     ],
   },

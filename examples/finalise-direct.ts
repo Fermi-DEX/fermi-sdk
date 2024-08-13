@@ -54,8 +54,6 @@ const main = async () => {
     )
   );
 
-  const slotsToConsume = new BN(0);
-
   const makerOpenOrders = (
     await client.findOpenOrdersForMarket(makerpubkey, new PublicKey(marketPda))
   )[0];
@@ -75,7 +73,7 @@ const main = async () => {
     makerQuoteAccount: makerQuoteAccount,
     maker: makerOpenOrders,
     taker: takerOpenOrders,
-    limit: new BN(1),
+    limit: new BN(0),
   };
   console.log(args);
 
@@ -91,6 +89,7 @@ const main = async () => {
     args.marketVaultBase,
     args.maker,
     args.taker,
+    new BN(2), 
     args.limit
   );
 
