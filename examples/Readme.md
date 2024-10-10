@@ -2,6 +2,13 @@
 
 ## Prerequisites
 
+1. **Ensure you're running the correct version of solana-cli**:
+
+   `sh -c "$(curl -sSfL https://release.solana.com/v1.17.6/install)"`
+
+2. **Clone this repo:**
+   `git clone https://github.com/Fermi-DEX/fermi-sdk`
+
 1. **Install dependencies**:
    Ensure that all necessary dependencies are installed. Run the following command:
 
@@ -15,7 +22,7 @@
 
    `vim examples/constants.ts`
 
-   Update the program ID in the file to the latest value.
+   Update the program ID in the file to the latest value [current staging program ID: `DrgsHv79i7B9YBW5jNcgQmXWHvur3MbRGKrbCauBm79z`].
 
 4. **Airdrop tokens**:
    Ensure you have enough tokens for testing. Use the following command to airdrop tokens:
